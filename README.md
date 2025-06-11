@@ -1,92 +1,61 @@
-# @loopkit/react
+# LoopKit React SDK
 
-A React TypeScript wrapper for the [@loopkit/javascript](https://www.npmjs.com/package/@loopkit/javascript) package that provides easy-to-use analytics functionality for React applications.
+A complete React TypeScript SDK for tracking events, user identification, and behavioral analytics. Built on top of **@loopkit/javascript** with full TypeScript support and **zero-config auto-tracking**.
+
+## 🚀 New in v1.1.0
+
+- **🔧 Full TypeScript Support**: Comprehensive type definitions imported from @loopkit/javascript
+- **📊 Zero-Config Auto Tracking**: Leverages built-in page views, clicks, and error tracking
+- **🎯 React-Specific Hooks**: Enhanced hooks with React context and lifecycle integration
+- **⚡ Reduced Bundle Size**: Eliminates duplicate code by using core SDK types
+- **🔄 Enhanced Error Boundary**: React error tracking that complements global error tracking
 
 ## Features
 
-- 🚀 **Easy Setup**: Simple provider-based initialization
-- 🔄 **React Hooks**: Intuitive hooks for tracking events and managing user data
-- 📊 **TypeScript Support**: Full TypeScript support with comprehensive type definitions
-- 🛡️ **Error Handling**: Built-in error handling with custom error types
-- 🎯 **Convenience Methods**: Pre-built tracking functions for common scenarios
-- ⚡ **Performance**: Optimized with React best practices (memoization, proper dependencies)
-- 🔧 **Flexible**: Access to underlying LoopKit SDK for advanced use cases
-- 🤖 **Smart Auto-tracking**: React-specific auto-tracking that complements the JavaScript SDK
+- **🔧 TypeScript Support**: Full TypeScript support with comprehensive type definitions from @loopkit/javascript
+- **📊 Auto Event Tracking**: Automatic page views, clicks, and error tracking (enabled by default)
+- **⚛️ React Integration**: React hooks, context, and error boundaries
+- **👤 User Identification**: Identify users and track their journey
+- **👥 Group Analytics**: Associate users with organizations/groups
+- **💾 Local Storage**: Persist events offline with automatic retry
+- **🌐 Cross-Platform**: Works in browsers and React applications
+- **📦 Multiple Formats**: ES modules, CommonJS, UMD builds available
 
 ## Installation
 
 ```bash
-npm install @loopkit/react @loopkit/javascript
+npm install @loopkit/react
 ```
 
-## Auto-tracking Capabilities
+### CDN
 
-The React SDK **complements** the JavaScript SDK's auto-tracking with React-specific enhancements:
-
-### JavaScript SDK Auto-tracking (Built-in)
-
-- ✅ **Page Views**: Basic navigation with `enableAutoCapture: true`
-- ✅ **JavaScript Errors**: Global error tracking with `enableErrorTracking: true`
-- ✅ **Session Management**: Automatic session tracking
-- ✅ **Activity Monitoring**: User activity detection
-
-### React SDK Enhancements
-
-- ✅ **SPA Navigation**: Enhanced tracking for React Router and programmatic navigation
-- ✅ **React Error Boundaries**: Component-level error tracking
-- ✅ **Performance Tracking**: Component render times and lifecycle events
-- ✅ **Route Changes**: React Router integration
-- ✅ **Feature Flag Tracking**: Feature flag evaluation tracking
-
-**Recommended Configuration:**
-
-```tsx
-<LoopKitProvider
-  apiKey="your-api-key"
-  config={{
-    // Enable JavaScript SDK auto-tracking
-    enableAutoCapture: true, // Basic page views + enhanced React navigation
-    enableErrorTracking: true, // Global errors + React Error Boundaries
-    enableSessionTracking: true, // Session management
-
-    // Performance settings
-    debug: true,
-    batchSize: 50,
-    flushInterval: 30,
-  }}
->
-  <App />
-</LoopKitProvider>
+```html
+<script src="https://unpkg.com/@loopkit/react/dist/index.umd.js"></script>
 ```
 
 ## Quick Start
 
-### 1. Wrap your app with LoopKitProvider
+### 1. Wrap Your App
 
-```tsx
+```jsx
 import React from 'react';
 import { LoopKitProvider } from '@loopkit/react';
+import App from './App';
 
-function App() {
+function Root() {
   return (
-    <LoopKitProvider
-      apiKey="your-api-key-here"
-      config={{
-        debug: true,
-        enableAutoCapture: true,
-      }}
-      onInitialized={() => console.log('LoopKit initialized!')}
-      onError={(error) => console.error('LoopKit error:', error)}
-    >
-      <YourApp />
+    <LoopKitProvider apiKey="your-api-key-here">
+      <App />
     </LoopKitProvider>
   );
 }
+
+export default Root;
 ```
 
-### 2. Use the hook in your components
+### 2. Use the Hook
 
-```tsx
+```jsx
 import React from 'react';
 import { useLoopKit } from '@loopkit/react';
 
@@ -94,249 +63,186 @@ function MyComponent() {
   const { track, identify, isInitialized } = useLoopKit();
 
   const handleButtonClick = () => {
-    track('button_clicked', {
-      button_name: 'signup',
-      page: '/homepage',
+    // Manual event tracking (auto-tracking already handles most clicks)
+    track('custom_button_clicked', {
+      button_name: 'cta',
+      page: '/dashboard',
     });
   };
 
-  const handleUserLogin = (userId: string) => {
+  const handleUserLogin = (userId, userData) => {
+    // Identify user
     identify(userId, {
-      email: 'user@example.com',
-      plan: 'pro',
+      email: userData.email,
+      plan: userData.plan,
     });
   };
 
   if (!isInitialized) {
-    return <div>Loading analytics...</div>;
+    return <div>Loading...</div>;
   }
 
   return (
     <div>
-      <button onClick={handleButtonClick}>Sign Up</button>
+      <button onClick={handleButtonClick}>Track Custom Event</button>
+      {/* Auto-tracking will automatically track this button click */}
+      <button onClick={() => console.log('Auto-tracked!')}>
+        Auto-Tracked Button
+      </button>
     </div>
   );
 }
 ```
 
-### 3. Add Error Boundary (Optional)
+## Auto-Tracking Features
 
-```tsx
-import { LoopKitErrorBoundary } from '@loopkit/react';
+The React SDK automatically leverages @loopkit/javascript's built-in auto-tracking:
+
+| Feature            | Default    | Event Type  | Description                             |
+| ------------------ | ---------- | ----------- | --------------------------------------- |
+| **Page Views**     | ✅ Enabled | `page_view` | Automatic page loads and SPA navigation |
+| **Click Tracking** | ✅ Enabled | `click`     | Button, link, and element clicks        |
+| **Error Tracking** | ✅ Enabled | `error`     | JavaScript errors and exceptions        |
+
+### Zero-Config Example
+
+```jsx
+import { LoopKitProvider } from '@loopkit/react';
 
 function App() {
   return (
     <LoopKitProvider apiKey="your-api-key">
-      <LoopKitErrorBoundary>
-        <YourApp />
-      </LoopKitErrorBoundary>
+      {/* Auto-tracking starts immediately! */}
+      {/* ✅ Page views tracked automatically */}
+      {/* ✅ Button clicks tracked automatically */}
+      {/* ✅ JavaScript errors tracked automatically */}
+      <YourApp />
     </LoopKitProvider>
   );
 }
 ```
 
-## API Reference
+### Customizing Auto-Tracking
 
-### LoopKitProvider
-
-The main provider component that initializes LoopKit and provides analytics functionality to child components.
-
-```tsx
+```jsx
 <LoopKitProvider
   apiKey="your-api-key"
   config={{
-    debug: false,
-    batchSize: 50,
-    flushInterval: 30,
-    enableAutoCapture: false,
-    enableErrorTracking: false,
+    enableAutoCapture: true, // Page view tracking
+    enableAutoClickTracking: true, // Click tracking
+    enableErrorTracking: true, // Error tracking
+    debug: true, // Enable debug logs
   }}
-  onInitialized={() => console.log('Ready!')}
-  onError={(error) => console.error(error)}
 >
-  {children}
+  <App />
 </LoopKitProvider>
 ```
 
-#### Props
+## Hooks
 
-| Prop            | Type                     | Required | Description                  |
-| --------------- | ------------------------ | -------- | ---------------------------- |
-| `apiKey`        | `string`                 | Yes      | Your LoopKit API key         |
-| `config`        | `LoopKitConfig`          | No       | Configuration options        |
-| `children`      | `ReactNode`              | Yes      | Child components             |
-| `onInitialized` | `() => void`             | No       | Called when LoopKit is ready |
-| `onError`       | `(error: Error) => void` | No       | Called when errors occur     |
+### `useLoopKit()`
 
-### LoopKitErrorBoundary
+Main hook providing full SDK functionality:
 
-React Error Boundary that automatically tracks component errors.
+```jsx
+import { useLoopKit } from '@loopkit/react';
 
-```tsx
-<LoopKitErrorBoundary
-  fallback={<div>Something went wrong!</div>}
-  onError={(error, errorInfo) => console.log('React error:', error)}
-  enableTracking={true}
->
-  <YourComponent />
-</LoopKitErrorBoundary>
-```
+function MyComponent() {
+  const {
+    // State
+    isInitialized,
+    isLoading,
+    error,
 
-### useLoopKit Hook
+    // Core methods
+    track,
+    identify,
+    group,
+    flush,
 
-The main hook for accessing LoopKit functionality.
+    // React-specific convenience methods
+    trackPageView,
+    trackClick,
+    trackFormSubmit,
+    setUserId,
+    setUserProperties,
+  } = useLoopKit({
+    userId: 'user123',
+    autoIdentify: true, // Auto-identify on mount
+  });
 
-```tsx
-const {
-  // State
-  isInitialized,
-  isLoading,
-  error,
-
-  // Core methods
-  track,
-  identify,
-  group,
-  flush,
-
-  // Convenience methods
-  trackPageView,
-  trackClick,
-  trackFormSubmit,
-  setUserId,
-  setUserProperties,
-  setGroup,
-} = useLoopKit();
-```
-
-#### Methods
-
-##### track(eventName, properties?, options?)
-
-Track a custom event.
-
-```tsx
-track('purchase_completed', {
-  amount: 99.99,
-  currency: 'USD',
-  product_id: 'pro_plan',
-});
-```
-
-##### identify(userId, properties?)
-
-Associate events with a specific user.
-
-```tsx
-identify('user_123', {
-  email: 'user@example.com',
-  plan: 'enterprise',
-  signup_date: '2024-01-15',
-});
-```
-
-##### group(groupId, properties?, groupType?)
-
-Associate the user with a group or organization.
-
-```tsx
-group('company_abc', {
-  name: 'Acme Corp',
-  plan: 'enterprise',
-  employee_count: 500,
-});
-```
-
-##### trackPageView(pageName?, properties?)
-
-Track page views with automatic URL detection.
-
-```tsx
-trackPageView('Homepage', {
-  campaign: 'summer_sale',
-});
-```
-
-##### trackClick(elementName, properties?)
-
-Track click events.
-
-```tsx
-trackClick('signup_button', {
-  location: 'header',
-  variant: 'primary',
-});
-```
-
-##### trackFormSubmit(formName, properties?)
-
-Track form submissions.
-
-```tsx
-trackFormSubmit('contact_form', {
-  fields: ['name', 'email', 'message'],
-});
-```
-
-### Specialized Hooks
-
-#### usePageView
-
-Automatically track page views when components mount.
-
-```tsx
-import { usePageView } from '@loopkit/react';
-
-function HomePage() {
-  usePageView('Homepage', { campaign: 'summer_sale' });
-
-  return <div>Welcome to our homepage!</div>;
+  return (
+    <div>
+      {isLoading && <span>Loading...</span>}
+      {error && <span>Error: {error.message}</span>}
+      {/* Your component */}
+    </div>
+  );
 }
 ```
 
-#### useIdentify
+### `usePageView()`
 
-Automatically identify users when user data changes.
+Track page views with React context:
 
-```tsx
+```jsx
+import { usePageView } from '@loopkit/react';
+
+function Page() {
+  // Track page view with additional context
+  usePageView('dashboard', {
+    section: 'analytics',
+    user_type: 'premium',
+  });
+
+  return <div>Dashboard</div>;
+}
+```
+
+### `useIdentify()`
+
+Auto-identify users:
+
+```jsx
 import { useIdentify } from '@loopkit/react';
 
 function UserProfile({ user }) {
+  // Auto-identify when user changes
   useIdentify(user?.id, {
     email: user?.email,
     plan: user?.plan,
   });
 
-  return <div>User Profile</div>;
+  return <div>Welcome {user?.name}!</div>;
 }
 ```
 
-#### useTrackEvent
+### `useTrackEvent()`
 
-Create a memoized tracking function for specific events.
+Create reusable event trackers:
 
-```tsx
+```jsx
 import { useTrackEvent } from '@loopkit/react';
 
 function ProductCard({ product }) {
   const trackProductView = useTrackEvent('product_viewed', {
-    product_id: product.id,
     category: product.category,
+    price: product.price,
   });
 
   useEffect(() => {
-    trackProductView();
-  }, [trackProductView]);
+    trackProductView({ product_id: product.id });
+  }, [product.id, trackProductView]);
 
   return <div>{product.name}</div>;
 }
 ```
 
-#### usePerformanceTracking
+### `usePerformanceTracking()`
 
-Track React component performance metrics.
+Track React component performance:
 
-```tsx
+```jsx
 import { usePerformanceTracking } from '@loopkit/react';
 
 function ExpensiveComponent() {
@@ -346,187 +252,48 @@ function ExpensiveComponent() {
     trackUnmounts: true,
   });
 
-  // Component logic...
-  return <div>Expensive operations...</div>;
+  return <div>Heavy component</div>;
 }
 ```
 
-#### useRouteTracking
+### `useRouteTracking()`
 
-Track React Router navigation changes.
+Track React Router navigation:
 
-```tsx
+```jsx
 import { useRouteTracking } from '@loopkit/react';
+import { useLocation, useParams } from 'react-router-dom';
 
-function ProductPage({ productId }) {
-  useRouteTracking('ProductPage', {
-    productId,
-    category: 'ecommerce',
+function RoutePage() {
+  const location = useLocation();
+  const params = useParams();
+
+  useRouteTracking('product-detail', {
+    productId: params.id,
+    category: params.category,
   });
 
-  return <div>Product {productId}</div>;
+  return <div>Product Detail</div>;
 }
 ```
 
-#### useFeatureFlagTracking
+## Error Boundary
 
-Track feature flag evaluations.
+Automatic React error tracking:
 
-```tsx
-import { useFeatureFlagTracking } from '@loopkit/react';
+```jsx
+import { LoopKitErrorBoundary } from '@loopkit/react';
 
-function FeatureComponent() {
-  const showNewFeature = useFeatureFlag('new-checkout-flow');
-
-  useFeatureFlagTracking('new-checkout-flow', showNewFeature, {
-    experiment: 'checkout-optimization',
-    variant: showNewFeature ? 'new' : 'old',
-  });
-
-  return showNewFeature ? <NewCheckout /> : <OldCheckout />;
-}
-```
-
-## Configuration Options
-
-```typescript
-interface LoopKitConfig {
-  // API Settings
-  baseURL?: string;
-
-  // Batching
-  batchSize?: number;
-  flushInterval?: number;
-  maxQueueSize?: number;
-
-  // Performance
-  enableCompression?: boolean;
-  requestTimeout?: number;
-
-  // Debugging
-  debug?: boolean;
-  logLevel?: 'error' | 'warn' | 'info' | 'debug';
-
-  // Auto-capture (Browser only)
-  enableAutoCapture?: boolean;
-  enableErrorTracking?: boolean;
-
-  // Privacy
-  respectDoNotTrack?: boolean;
-  enableLocalStorage?: boolean;
-
-  // Retry Logic
-  maxRetries?: number;
-  retryBackoff?: 'exponential' | 'linear';
-
-  // Callbacks
-  onBeforeTrack?: (event: TrackEvent) => TrackEvent | null;
-  onAfterTrack?: (event: TrackEvent, success: boolean) => void;
-  onError?: (error: Error) => void;
-}
-```
-
-## Error Handling
-
-The SDK provides custom error types for better error handling:
-
-```tsx
-import {
-  LoopKitError,
-  LoopKitInitializationError,
-  LoopKitTrackingError,
-} from '@loopkit/react';
-
-function MyComponent() {
-  const { track } = useLoopKit();
-
-  const handleTrack = async () => {
-    try {
-      await track('event_name', { prop: 'value' });
-    } catch (error) {
-      if (error instanceof LoopKitTrackingError) {
-        console.error('Tracking failed:', error.message);
-      } else if (error instanceof LoopKitInitializationError) {
-        console.error('LoopKit not initialized:', error.message);
-      }
-    }
-  };
-}
-```
-
-## Advanced Usage
-
-### Access Underlying SDK
-
-For advanced use cases, you can access the underlying LoopKit SDK:
-
-```tsx
-import { LoopKit } from '@loopkit/react';
-
-// Direct access to the JavaScript SDK
-LoopKit.configure({ debug: true });
-const queueSize = LoopKit.getQueueSize();
-```
-
-### Custom Hook with Auto-Identification
-
-```tsx
-function useUserTracking(user) {
-  const { identify, track } = useLoopKit({
-    userId: user?.id,
-    userProperties: {
-      email: user?.email,
-      plan: user?.subscription?.plan,
-    },
-    autoIdentify: true,
-  });
-
-  const trackUserAction = useCallback(
-    (action, properties = {}) => {
-      track(action, {
-        user_id: user?.id,
-        user_plan: user?.subscription?.plan,
-        ...properties,
-      });
-    },
-    [track, user]
-  );
-
-  return { trackUserAction };
-}
-```
-
-### Complete App Setup with Auto-tracking
-
-```tsx
-import React from 'react';
-import {
-  LoopKitProvider,
-  LoopKitErrorBoundary,
-  usePerformanceTracking,
-} from '@loopkit/react';
-
-// Component with performance tracking
-function Dashboard() {
-  usePerformanceTracking('Dashboard');
-  return <div>Dashboard content...</div>;
-}
-
-// Main app with full auto-tracking setup
 function App() {
   return (
-    <LoopKitProvider
-      apiKey="your-api-key"
-      config={{
-        // Enable all auto-tracking features
-        enableAutoCapture: true, // Page views + React navigation
-        enableErrorTracking: true, // Global errors + React errors
-        enableSessionTracking: true, // Session management
-        debug: process.env.NODE_ENV === 'development',
-      }}
-    >
-      <LoopKitErrorBoundary fallback={<div>Error occurred!</div>}>
-        <Dashboard />
+    <LoopKitProvider apiKey="your-api-key">
+      <LoopKitErrorBoundary
+        fallback={<div>Something went wrong!</div>}
+        onError={(error, errorInfo) => {
+          console.error('React error:', error);
+        }}
+      >
+        <YourApp />
       </LoopKitErrorBoundary>
     </LoopKitProvider>
   );
@@ -535,119 +302,157 @@ function App() {
 
 ## TypeScript Support
 
-The SDK is built with TypeScript and provides comprehensive type definitions:
+Full TypeScript support with types from @loopkit/javascript:
 
-```tsx
+```typescript
 import type {
+  // Core types from @loopkit/javascript
   LoopKitConfig,
-  UserProperties,
+  TrackEvent,
+  IdentifyEvent,
+  GroupEvent,
   TrackOptions,
+  ClickEventProperties,
+  BatchEventInput,
+
+  // React-specific types
+  UserProperties,
+  GroupProperties,
   UseLoopKitReturn,
 } from '@loopkit/react';
 
 const config: LoopKitConfig = {
+  apiKey: 'your-key',
+  enableAutoCapture: true,
+  enableAutoClickTracking: true,
+  enableErrorTracking: true,
   debug: true,
-  batchSize: 100,
 };
 
-const userProps: UserProperties = {
-  email: 'user@example.com',
-  plan: 'pro',
-  signup_date: '2024-01-15',
-};
+function MyComponent() {
+  const loopkit: UseLoopKitReturn = useLoopKit();
+
+  const trackCustomEvent = async () => {
+    const properties: Record<string, any> = {
+      custom_property: 'value',
+      timestamp: new Date().toISOString(),
+    };
+
+    await loopkit.track('custom_event', properties);
+  };
+
+  return <button onClick={trackCustomEvent}>Track Event</button>;
+}
+```
+
+## Configuration Options
+
+All configuration options from @loopkit/javascript are supported:
+
+```jsx
+<LoopKitProvider
+  apiKey="your-api-key"
+  config={{
+    // API Settings
+    baseURL: 'https://api.loopkit.ai/v1',
+
+    // Batching
+    batchSize: 50,
+    flushInterval: 30,
+    maxQueueSize: 1000,
+
+    // Auto-tracking (all enabled by default)
+    enableAutoCapture: true, // Page views
+    enableAutoClickTracking: true, // Click events
+    enableErrorTracking: true, // JavaScript errors
+
+    // Performance
+    enableCompression: true,
+    requestTimeout: 10000,
+
+    // Debugging
+    debug: true,
+    logLevel: 'info',
+
+    // Privacy
+    respectDoNotTrack: true,
+    enableLocalStorage: true,
+
+    // Callbacks
+    onBeforeTrack: (event) => {
+      console.log('Tracking:', event);
+      return event;
+    },
+    onAfterTrack: (event, success) => {
+      console.log(`Event ${success ? 'sent' : 'failed'}:`, event);
+    },
+    onError: (error) => {
+      console.error('LoopKit error:', error);
+    },
+  }}
+  onError={(error) => console.error('Provider error:', error)}
+  onInitialized={() => console.log('LoopKit initialized')}
+>
+  <App />
+</LoopKitProvider>
+```
+
+## Advanced Usage
+
+### Access the Core SDK
+
+```jsx
+import { LoopKit } from '@loopkit/react';
+
+// Direct access to @loopkit/javascript SDK
+LoopKit.track('direct_event', { source: 'direct_sdk' });
+```
+
+### Manual Configuration
+
+```jsx
+import { useLoopKitContext } from '@loopkit/react';
+
+function SettingsComponent() {
+  const { configure } = useLoopKitContext();
+
+  const updateConfig = () => {
+    configure({
+      debug: true,
+      batchSize: 100,
+    });
+  };
+
+  return <button onClick={updateConfig}>Enable Debug</button>;
+}
 ```
 
 ## Examples
 
-### E-commerce Tracking
+Check out the `/examples` directory for complete examples:
 
-```tsx
-function ProductPage({ product }) {
-  const { track, trackPageView } = useLoopKit();
+- **Basic React App**: Simple integration example
+- **React Router**: SPA navigation tracking
+- **TypeScript**: Full TypeScript implementation
+- **Advanced**: Performance tracking, error boundaries, custom events
 
-  // Track page view
-  usePageView(`Product: ${product.name}`, {
-    product_id: product.id,
-    category: product.category,
-    price: product.price,
-  });
+## Migration from v1.0.x
 
-  const handleAddToCart = () => {
-    track('add_to_cart', {
-      product_id: product.id,
-      product_name: product.name,
-      price: product.price,
-      quantity: 1,
-    });
-  };
+v1.1.0 is backward compatible, but you can now:
 
-  const handlePurchase = () => {
-    track('purchase', {
-      product_id: product.id,
-      amount: product.price,
-      currency: 'USD',
-    });
-  };
+1. **Remove manual page view tracking** - it's automatic now
+2. **Remove manual click tracking** - it's automatic now
+3. **Use TypeScript types from @loopkit/javascript** instead of duplicated types
+4. **Simplify configuration** - auto-tracking is enabled by default
 
-  return (
-    <div>
-      <h1>{product.name}</h1>
-      <button onClick={handleAddToCart}>Add to Cart</button>
-      <button onClick={handlePurchase}>Buy Now</button>
-    </div>
-  );
-}
-```
+## Contributing
 
-### User Authentication Flow
-
-```tsx
-function AuthComponent() {
-  const { identify, track } = useLoopKit();
-
-  const handleLogin = async (email, password) => {
-    try {
-      const user = await authService.login(email, password);
-
-      // Identify the user
-      await identify(user.id, {
-        email: user.email,
-        plan: user.subscription?.plan,
-        signup_date: user.createdAt,
-      });
-
-      // Track login event
-      await track('user_logged_in', {
-        method: 'email',
-        user_plan: user.subscription?.plan,
-      });
-    } catch (error) {
-      track('login_failed', {
-        error: error.message,
-        method: 'email',
-      });
-    }
-  };
-
-  const handleSignup = async (userData) => {
-    const user = await authService.signup(userData);
-
-    await identify(user.id, userData);
-    await track('user_signed_up', {
-      method: 'email',
-      source: 'website',
-    });
-  };
-}
-```
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
-
-## Support
-
-For issues and questions:
-
-- [GitHub Issues](https://github.com/loopkitai/reactjs-sdk/issues)
-- [LoopKit Documentation](https://docs.loopkit.ai)

@@ -1,54 +1,46 @@
 /**
  * LoopKit React SDK Types
+ *
+ * This file extends the core @loopkit/javascript types with React-specific functionality.
  */
 
 import type { ReactNode } from 'react';
 
-export interface LoopKitConfig {
-  // API Settings
-  baseURL?: string;
+// Re-export core types from @loopkit/javascript
+export type {
+  // Configuration
+  LoopKitConfig,
+  LogLevel,
+  RetryBackoff,
 
-  // Batching
-  batchSize?: number;
-  flushInterval?: number;
-  maxQueueSize?: number;
+  // Events
+  TrackEvent,
+  IdentifyEvent,
+  GroupEvent,
+  ClickEventProperties,
+  BatchEventInput,
+  TrackOptions,
 
-  // Performance
-  enableCompression?: boolean;
-  requestTimeout?: number;
+  // Core interfaces
+  ILoopKit,
+  IStorageManager,
+  ISessionManager,
+  IQueueManager,
+  INetworkManager,
 
-  // Debugging
-  debug?: boolean;
-  logLevel?: 'error' | 'warn' | 'info' | 'debug';
+  // Convenience aliases
+  Config,
+  Event,
+  Options,
+} from '@loopkit/javascript';
 
-  // Auto-capture (Browser only)
-  enableAutoCapture?: boolean;
-  enableErrorTracking?: boolean;
+import type {
+  LoopKitConfig,
+  TrackOptions,
+  BatchEventInput,
+} from '@loopkit/javascript';
 
-  // Privacy
-  respectDoNotTrack?: boolean;
-  enableLocalStorage?: boolean;
-
-  // Retry Logic
-  maxRetries?: number;
-  retryBackoff?: 'exponential' | 'linear';
-
-  // Callbacks
-  onBeforeTrack?: (event: TrackEvent) => TrackEvent | null;
-  onAfterTrack?: (event: TrackEvent, success: boolean) => void;
-  onError?: (error: Error) => void;
-}
-
-export interface TrackEvent {
-  name: string;
-  properties?: Record<string, any>;
-  options?: TrackOptions;
-}
-
-export interface TrackOptions {
-  timestamp?: string | Date;
-  [key: string]: any;
-}
+// React-specific types
 
 export interface UserProperties {
   email?: string;
@@ -67,12 +59,6 @@ export interface GroupProperties {
   [key: string]: any;
 }
 
-export interface BatchEvent {
-  name: string;
-  properties?: Record<string, any>;
-  options?: TrackOptions;
-}
-
 export interface LoopKitContextValue {
   isInitialized: boolean;
   isLoading: boolean;
@@ -85,7 +71,7 @@ export interface LoopKitContextValue {
     properties?: Record<string, any>,
     options?: TrackOptions
   ) => Promise<void>;
-  trackBatch: (events: BatchEvent[]) => Promise<void>;
+  trackBatch: (events: BatchEventInput[]) => Promise<void>;
   identify: (userId: string, properties?: UserProperties) => Promise<void>;
   group: (
     groupId: string,
@@ -103,7 +89,7 @@ export interface LoopKitContextValue {
 
 export interface LoopKitProviderProps {
   apiKey: string;
-  config?: LoopKitConfig;
+  config?: Partial<LoopKitConfig>;
   children: ReactNode;
   onError?: (error: Error) => void;
   onInitialized?: () => void;
@@ -117,7 +103,7 @@ export interface UseLoopKitOptions {
 
 export interface UseLoopKitReturn
   extends Omit<LoopKitContextValue, 'configure'> {
-  // Additional convenience methods
+  // Additional convenience methods for React
   trackPageView: (
     pageName?: string,
     properties?: Record<string, any>
@@ -143,7 +129,7 @@ export interface UseLoopKitReturn
   ) => Promise<void>;
 }
 
-// Error types
+// React-specific error types
 export class LoopKitError extends Error {
   constructor(
     message: string,

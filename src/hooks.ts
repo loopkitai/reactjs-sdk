@@ -11,7 +11,8 @@ import type {
 /**
  * Main hook for using LoopKit analytics
  *
- * Provides enhanced functionality with convenience methods for common tracking scenarios.
+ * Provides enhanced functionality with convenience methods for common React tracking scenarios.
+ * The underlying @loopkit/javascript SDK automatically handles clicks, page views, and errors.
  *
  * @param options Configuration options for the hook
  * @returns Enhanced LoopKit functionality with convenience methods
@@ -42,7 +43,8 @@ export const useLoopKit = (
     }
   }, [autoIdentify, userId, userProperties, isInitialized, identify]);
 
-  // Track page view
+  // Track page view with React-specific context
+  // Note: The SDK already auto-tracks page views, but this provides additional React context
   const trackPageView = useCallback(
     async (
       pageName?: string,
@@ -53,6 +55,7 @@ export const useLoopKit = (
         url: window.location.href,
         title: document.title,
         referrer: document.referrer,
+        source: 'react_manual', // Distinguish from auto-tracking
         ...properties,
       };
 
@@ -61,7 +64,8 @@ export const useLoopKit = (
     [track]
   );
 
-  // Track click events
+  // Track click events with React-specific context
+  // Note: The SDK already auto-tracks clicks, but this provides manual control
   const trackClick = useCallback(
     async (
       elementName: string,
@@ -70,6 +74,7 @@ export const useLoopKit = (
       const clickProperties = {
         element: elementName,
         page: window.location.pathname,
+        source: 'react_manual', // Distinguish from auto-tracking
         ...properties,
       };
 
@@ -141,7 +146,7 @@ export const useLoopKit = (
     flush,
     getQueueSize,
 
-    // Convenience methods
+    // React-specific convenience methods
     trackPageView,
     trackClick,
     trackFormSubmit,
@@ -156,9 +161,10 @@ export const useLoopKit = (
 };
 
 /**
- * Hook for tracking page views automatically
+ * Hook for tracking page views manually
  *
- * Automatically tracks page views when the component mounts or when dependencies change.
+ * Note: @loopkit/javascript automatically tracks page views by default.
+ * Use this hook when you need additional React-specific context or manual control.
  *
  * @param pageName Optional page name override
  * @param properties Additional properties to send with page view
@@ -320,6 +326,8 @@ export const usePerformanceTracking = (
  * Hook for tracking React Router navigation
  *
  * Specifically designed to work with React Router and track route changes.
+ * Note: @loopkit/javascript automatically tracks page views, but this provides
+ * additional React Router specific context.
  *
  * @param routeName Optional route name override
  * @param routeParams Route parameters to include
