@@ -1,6 +1,6 @@
 {
     "name": "@loopkit/react",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "React TypeScript wrapper for the @loopkit/javascript package",
     "main": "dist/index.js",
     "module": "dist/index.esm.js",

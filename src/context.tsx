@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from 'react';
 import LoopKit from '@loopkit/javascript';
 import type {
@@ -40,6 +41,7 @@ export const LoopKitProvider: React.FC<LoopKitProviderProps> = ({
   const [currentConfig, setCurrentConfig] = useState<LoopKitConfig | null>(
     null
   );
+  const previousPathRef = useRef<string>('');
 
   // Initialize LoopKit
   useEffect(() => {
@@ -78,6 +80,62 @@ export const LoopKitProvider: React.FC<LoopKitProviderProps> = ({
 
     initializeLoopKit();
   }, [apiKey, config, onError, onInitialized]);
+
+  // React-specific auto-tracking: Enhanced SPA navigation tracking
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    // Only add React-specific navigation tracking if auto-capture is enabled
+    const shouldTrackNavigation = config.enableAutoCapture !== false;
+    if (!shouldTrackNavigation) return;
+
+    const trackPageView = () => {
+      const currentPath = window.location.pathname;
+
+      // Avoid duplicate tracking - only track if path actually changed
+      if (currentPath !== previousPathRef.current) {
+        previousPathRef.current = currentPath;
+
+        LoopKit.track('page_view', {
+          page: currentPath,
+          title: document.title,
+          url: window.location.href,
+          referrer: document.referrer,
+          source: 'react_navigation', // Distinguish from JS SDK auto-tracking
+        });
+      }
+    };
+
+    // Track initial page view for React apps
+    trackPageView();
+
+    // Enhanced navigation tracking for SPAs
+    // This complements the JS SDK's popstate tracking
+    const handleLocationChange = () => {
+      // Small delay to ensure DOM has updated
+      setTimeout(trackPageView, 0);
+    };
+
+    // Listen for programmatic navigation (React Router, etc.)
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
+    window.history.pushState = function (...args) {
+      originalPushState.apply(window.history, args);
+      handleLocationChange();
+    };
+
+    window.history.replaceState = function (...args) {
+      originalReplaceState.apply(window.history, args);
+      handleLocationChange();
+    };
+
+    // Cleanup
+    return () => {
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+    };
+  }, [isInitialized, config.enableAutoCapture]);
 
   // Track event
   const track = useCallback(

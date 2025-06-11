@@ -7,8 +7,22 @@
 // Export main provider and context
 export { LoopKitProvider, useLoopKitContext } from './context';
 
+// Export Error Boundary components
+export {
+  LoopKitErrorBoundary,
+  withErrorBoundary,
+} from './components/ErrorBoundary';
+
 // Export main hooks
-export { useLoopKit, usePageView, useIdentify, useTrackEvent } from './hooks';
+export {
+  useLoopKit,
+  usePageView,
+  useIdentify,
+  useTrackEvent,
+  usePerformanceTracking,
+  useRouteTracking,
+  useFeatureFlagTracking,
+} from './hooks';
 
 // Export all types
 export type {

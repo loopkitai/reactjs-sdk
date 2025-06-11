@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { DependencyList } from 'react';
 import { useLoopKitContext } from './context';
 import type {
@@ -221,4 +221,161 @@ export const useTrackEvent = (
     },
     [track, eventName, defaultProperties]
   );
+};
+
+/**
+ * Hook for tracking component performance
+ *
+ * Tracks render times and component lifecycle events.
+ *
+ * @param componentName Name of the component being tracked
+ * @param options Tracking options
+ */
+export const usePerformanceTracking = (
+  componentName: string,
+  options: {
+    trackRenderTime?: boolean;
+    trackMounts?: boolean;
+    trackUnmounts?: boolean;
+    enabled?: boolean;
+  } = {}
+) => {
+  const { track, isInitialized } = useLoopKit();
+  const {
+    trackRenderTime = true,
+    trackMounts = true,
+    trackUnmounts = true,
+    enabled = true,
+  } = options;
+
+  const renderStartTime = useRef<number>(0);
+  const mountTime = useRef<number>(0);
+
+  // Track render start time
+  if (trackRenderTime && enabled && isInitialized) {
+    renderStartTime.current = performance.now();
+  }
+
+  // Track component mount
+  useEffect(() => {
+    if (!enabled || !isInitialized) return;
+
+    mountTime.current = performance.now();
+
+    if (trackMounts) {
+      track('component_mounted', {
+        component_name: componentName,
+        mount_time: mountTime.current,
+      }).catch(console.error);
+    }
+
+    // Track render time after mount
+    if (trackRenderTime && renderStartTime.current > 0) {
+      const renderTime = mountTime.current - renderStartTime.current;
+      track('component_render_time', {
+        component_name: componentName,
+        render_time_ms: renderTime,
+        render_type: 'mount',
+      }).catch(console.error);
+    }
+
+    // Cleanup function for unmount tracking
+    return () => {
+      if (trackUnmounts) {
+        const unmountTime = performance.now();
+        const componentLifetime = unmountTime - mountTime.current;
+
+        track('component_unmounted', {
+          component_name: componentName,
+          unmount_time: unmountTime,
+          component_lifetime_ms: componentLifetime,
+        }).catch(console.error);
+      }
+    };
+  }, [
+    componentName,
+    track,
+    trackMounts,
+    trackUnmounts,
+    trackRenderTime,
+    enabled,
+    isInitialized,
+  ]);
+
+  // Track re-render time
+  useEffect(() => {
+    if (!enabled || !isInitialized || !trackRenderTime) return;
+    if (mountTime.current === 0) return; // Skip first render (mount)
+
+    const renderTime = performance.now() - renderStartTime.current;
+    track('component_render_time', {
+      component_name: componentName,
+      render_time_ms: renderTime,
+      render_type: 'update',
+    }).catch(console.error);
+  });
+};
+
+/**
+ * Hook for tracking React Router navigation
+ *
+ * Specifically designed to work with React Router and track route changes.
+ *
+ * @param routeName Optional route name override
+ * @param routeParams Route parameters to include
+ */
+export const useRouteTracking = (
+  routeName?: string,
+  routeParams: Record<string, any> = {}
+) => {
+  const { track, isInitialized } = useLoopKit();
+  const previousRoute = useRef<string>('');
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const currentRoute = routeName || window.location.pathname;
+
+    // Only track if route actually changed
+    if (currentRoute !== previousRoute.current) {
+      previousRoute.current = currentRoute;
+
+      track('route_change', {
+        route: currentRoute,
+        route_name: routeName,
+        route_params: routeParams,
+        page: window.location.pathname,
+        url: window.location.href,
+        source: 'react_router',
+      }).catch(console.error);
+    }
+  }, [routeName, routeParams, track, isInitialized]);
+};
+
+/**
+ * Hook for tracking feature flag usage
+ *
+ * Tracks when feature flags are evaluated or used.
+ *
+ * @param flagName Name of the feature flag
+ * @param flagValue Current value of the flag
+ * @param metadata Additional metadata about the flag
+ */
+export const useFeatureFlagTracking = (
+  flagName: string,
+  flagValue: boolean | string | number,
+  metadata: Record<string, any> = {}
+) => {
+  const { track, isInitialized } = useLoopKit();
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    track('feature_flag_evaluated', {
+      flag_name: flagName,
+      flag_value: flagValue,
+      flag_type: typeof flagValue,
+      ...metadata,
+    }).catch(console.error);
+  }, [flagName, flagValue, metadata, track, isInitialized]);
 };

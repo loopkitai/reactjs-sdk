@@ -11,11 +11,52 @@ A React TypeScript wrapper for the [@loopkit/javascript](https://www.npmjs.com/p
 - 🎯 **Convenience Methods**: Pre-built tracking functions for common scenarios
 - ⚡ **Performance**: Optimized with React best practices (memoization, proper dependencies)
 - 🔧 **Flexible**: Access to underlying LoopKit SDK for advanced use cases
+- 🤖 **Smart Auto-tracking**: React-specific auto-tracking that complements the JavaScript SDK
 
 ## Installation
 
 ```bash
 npm install @loopkit/react @loopkit/javascript
+```
+
+## Auto-tracking Capabilities
+
+The React SDK **complements** the JavaScript SDK's auto-tracking with React-specific enhancements:
+
+### JavaScript SDK Auto-tracking (Built-in)
+
+- ✅ **Page Views**: Basic navigation with `enableAutoCapture: true`
+- ✅ **JavaScript Errors**: Global error tracking with `enableErrorTracking: true`
+- ✅ **Session Management**: Automatic session tracking
+- ✅ **Activity Monitoring**: User activity detection
+
+### React SDK Enhancements
+
+- ✅ **SPA Navigation**: Enhanced tracking for React Router and programmatic navigation
+- ✅ **React Error Boundaries**: Component-level error tracking
+- ✅ **Performance Tracking**: Component render times and lifecycle events
+- ✅ **Route Changes**: React Router integration
+- ✅ **Feature Flag Tracking**: Feature flag evaluation tracking
+
+**Recommended Configuration:**
+
+```tsx
+<LoopKitProvider
+  apiKey="your-api-key"
+  config={{
+    // Enable JavaScript SDK auto-tracking
+    enableAutoCapture: true, // Basic page views + enhanced React navigation
+    enableErrorTracking: true, // Global errors + React Error Boundaries
+    enableSessionTracking: true, // Session management
+
+    // Performance settings
+    debug: true,
+    batchSize: 50,
+    flushInterval: 30,
+  }}
+>
+  <App />
+</LoopKitProvider>
 ```
 
 ## Quick Start
@@ -78,6 +119,22 @@ function MyComponent() {
 }
 ```
 
+### 3. Add Error Boundary (Optional)
+
+```tsx
+import { LoopKitErrorBoundary } from '@loopkit/react';
+
+function App() {
+  return (
+    <LoopKitProvider apiKey="your-api-key">
+      <LoopKitErrorBoundary>
+        <YourApp />
+      </LoopKitErrorBoundary>
+    </LoopKitProvider>
+  );
+}
+```
+
 ## API Reference
 
 ### LoopKitProvider
@@ -110,6 +167,20 @@ The main provider component that initializes LoopKit and provides analytics func
 | `children`      | `ReactNode`              | Yes      | Child components             |
 | `onInitialized` | `() => void`             | No       | Called when LoopKit is ready |
 | `onError`       | `(error: Error) => void` | No       | Called when errors occur     |
+
+### LoopKitErrorBoundary
+
+React Error Boundary that automatically tracks component errors.
+
+```tsx
+<LoopKitErrorBoundary
+  fallback={<div>Something went wrong!</div>}
+  onError={(error, errorInfo) => console.log('React error:', error)}
+  enableTracking={true}
+>
+  <YourComponent />
+</LoopKitErrorBoundary>
+```
 
 ### useLoopKit Hook
 
@@ -261,6 +332,61 @@ function ProductCard({ product }) {
 }
 ```
 
+#### usePerformanceTracking
+
+Track React component performance metrics.
+
+```tsx
+import { usePerformanceTracking } from '@loopkit/react';
+
+function ExpensiveComponent() {
+  usePerformanceTracking('ExpensiveComponent', {
+    trackRenderTime: true,
+    trackMounts: true,
+    trackUnmounts: true,
+  });
+
+  // Component logic...
+  return <div>Expensive operations...</div>;
+}
+```
+
+#### useRouteTracking
+
+Track React Router navigation changes.
+
+```tsx
+import { useRouteTracking } from '@loopkit/react';
+
+function ProductPage({ productId }) {
+  useRouteTracking('ProductPage', {
+    productId,
+    category: 'ecommerce',
+  });
+
+  return <div>Product {productId}</div>;
+}
+```
+
+#### useFeatureFlagTracking
+
+Track feature flag evaluations.
+
+```tsx
+import { useFeatureFlagTracking } from '@loopkit/react';
+
+function FeatureComponent() {
+  const showNewFeature = useFeatureFlag('new-checkout-flow');
+
+  useFeatureFlagTracking('new-checkout-flow', showNewFeature, {
+    experiment: 'checkout-optimization',
+    variant: showNewFeature ? 'new' : 'old',
+  });
+
+  return showNewFeature ? <NewCheckout /> : <OldCheckout />;
+}
+```
+
 ## Configuration Options
 
 ```typescript
@@ -367,6 +493,43 @@ function useUserTracking(user) {
   );
 
   return { trackUserAction };
+}
+```
+
+### Complete App Setup with Auto-tracking
+
+```tsx
+import React from 'react';
+import {
+  LoopKitProvider,
+  LoopKitErrorBoundary,
+  usePerformanceTracking,
+} from '@loopkit/react';
+
+// Component with performance tracking
+function Dashboard() {
+  usePerformanceTracking('Dashboard');
+  return <div>Dashboard content...</div>;
+}
+
+// Main app with full auto-tracking setup
+function App() {
+  return (
+    <LoopKitProvider
+      apiKey="your-api-key"
+      config={{
+        // Enable all auto-tracking features
+        enableAutoCapture: true, // Page views + React navigation
+        enableErrorTracking: true, // Global errors + React errors
+        enableSessionTracking: true, // Session management
+        debug: process.env.NODE_ENV === 'development',
+      }}
+    >
+      <LoopKitErrorBoundary fallback={<div>Error occurred!</div>}>
+        <Dashboard />
+      </LoopKitErrorBoundary>
+    </LoopKitProvider>
+  );
 }
 ```
 
@@ -486,5 +649,5 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 For issues and questions:
 
-- [GitHub Issues](https://github.com/loopkit/loopkit-react-sdk/issues)
+- [GitHub Issues](https://github.com/loopkitai/reactjs-sdk/issues)
 - [LoopKit Documentation](https://docs.loopkit.ai)
