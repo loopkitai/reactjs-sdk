@@ -1,6 +1,6 @@
 {
     "name": "@loopkit/react",
-    "version": "1.1.3",
+    "version": "1.1.4",
     "description": "React TypeScript wrapper for @loopkit/javascript with built-in auto-tracking and comprehensive TypeScript support",
     "main": "dist/index.js",
     "module": "dist/index.esm.js",
