@@ -95,13 +95,6 @@ describe('LoopKitErrorBoundary', () => {
   });
 
   it('should track error with LoopKit when tracking is enabled', () => {
-    // Mock window.location
-    delete (window as any).location;
-    (window as any).location = {
-      pathname: '/test-page',
-      href: 'http://localhost/test-page',
-    };
-
     render(
       <LoopKitErrorBoundary enableTracking={true}>
         <ThrowingComponent />
@@ -114,8 +107,8 @@ describe('LoopKitErrorBoundary', () => {
       error_stack: expect.any(String),
       component_stack: expect.any(String),
       error_boundary: true,
-      page: '/test-page',
-      url: 'http://localhost/test-page',
+      page: '/',
+      url: 'http://localhost/',
     });
   });
 

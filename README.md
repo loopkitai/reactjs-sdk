@@ -9,6 +9,7 @@ A complete React TypeScript SDK for tracking events, user identification, and be
 - **🎯 React-Specific Hooks**: Enhanced hooks with React context and lifecycle integration
 - **⚡ Reduced Bundle Size**: Eliminates duplicate code by using core SDK types
 - **🔄 Enhanced Error Boundary**: React error tracking that complements global error tracking
+- **🌐 Next.js Compatible**: Full server-side rendering (SSR) support
 
 ## Features
 
@@ -19,6 +20,7 @@ A complete React TypeScript SDK for tracking events, user identification, and be
 - **👥 Group Analytics**: Associate users with organizations/groups
 - **💾 Local Storage**: Persist events offline with automatic retry
 - **🌐 Cross-Platform**: Works in browsers and React applications
+- **🌐 Next.js Compatible**: Full server-side rendering (SSR) support
 - **📦 Multiple Formats**: ES modules, CommonJS, UMD builds available
 
 ## Installation
@@ -62,34 +64,74 @@ import { useLoopKit } from '@loopkit/react';
 function MyComponent() {
   const { track, identify, isInitialized } = useLoopKit();
 
-  const handleButtonClick = () => {
-    // Manual event tracking (auto-tracking already handles most clicks)
-    track('custom_button_clicked', {
-      button_name: 'cta',
-      page: '/dashboard',
-    });
-  };
-
-  const handleUserLogin = (userId, userData) => {
-    // Identify user
-    identify(userId, {
-      email: userData.email,
-      plan: userData.plan,
-    });
+  const handleClick = async () => {
+    await track('button_clicked', { buttonName: 'Subscribe' });
   };
 
   if (!isInitialized) {
-    return <div>Loading...</div>;
+    return <div>Loading analytics...</div>;
   }
 
+  return <button onClick={handleClick}>Subscribe</button>;
+}
+```
+
+## Next.js Compatibility
+
+The LoopKit React SDK is fully compatible with Next.js and server-side rendering (SSR). The SDK automatically detects the environment and:
+
+- **Skips initialization during SSR**: Prevents server-side errors
+- **Defers tracking until hydration**: All tracking happens client-side
+- **Handles browser APIs safely**: No `window` or `document` access during SSR
+
+### Next.js App Router Example
+
+```jsx
+// app/layout.tsx
+import { LoopKitProvider } from '@loopkit/react';
+
+export default function RootLayout({ children }) {
   return (
-    <div>
-      <button onClick={handleButtonClick}>Track Custom Event</button>
-      {/* Auto-tracking will automatically track this button click */}
-      <button onClick={() => console.log('Auto-tracked!')}>
-        Auto-Tracked Button
-      </button>
-    </div>
+    <html lang="en">
+      <body>
+        <LoopKitProvider apiKey="your-api-key-here">{children}</LoopKitProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx
+// app/page.tsx
+'use client'; // Required for hooks in App Router
+
+import { useLoopKit } from '@loopkit/react';
+
+export default function HomePage() {
+  const { track, isInitialized } = useLoopKit();
+
+  const handleClick = () => {
+    if (isInitialized) {
+      track('homepage_cta_clicked');
+    }
+  };
+
+  return <button onClick={handleClick}>Get Started</button>;
+}
+```
+
+### Next.js Pages Router Example
+
+```jsx
+// pages/_app.tsx
+import { LoopKitProvider } from '@loopkit/react';
+import type { AppProps } from 'next/app';
+
+export default function App({ Component, pageProps }: AppProps) {
+  return (
+    <LoopKitProvider apiKey="your-api-key-here">
+      <Component {...pageProps} />
+    </LoopKitProvider>
   );
 }
 ```
@@ -456,3 +498,116 @@ v1.1.0 is backward compatible, but you can now:
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+## Next.js Troubleshooting
+
+If you encounter issues with Next.js, here are common solutions:
+
+### 1. "ReactCurrentDispatcher" Error
+
+If you see an error like `Cannot read properties of undefined (reading 'ReactCurrentDispatcher')`, this is typically caused by:
+
+- **SSR Execution**: The SDK trying to execute during server-side rendering
+- **Solution**: The updated SDK (v1.1.4+) automatically handles this by detecting the browser environment
+
+### 2. Module Export Errors
+
+If you see errors like `'@loopkit/javascript' does not contain a default export`:
+
+- **Cause**: Module resolution issues between different export formats
+- **Solution**: The updated SDK (v1.1.4+) handles this automatically with improved import handling
+
+### 3. "Cannot access before initialization" Errors
+
+If you see reference errors during SSR:
+
+```jsx
+// ❌ Don't do this - direct usage in component body
+function MyComponent() {
+  const analytics = useLoopKit(); // May cause SSR issues
+
+  // Component using analytics directly in render
+}
+
+// ✅ Do this - conditional usage
+function MyComponent() {
+  const { track, isInitialized } = useLoopKit();
+
+  useEffect(() => {
+    if (isInitialized) {
+      // Safe to use after initialization
+      track('component_mounted');
+    }
+  }, [isInitialized, track]);
+
+  return <div>My Component</div>;
+}
+```
+
+### 4. App Router vs Pages Router
+
+**App Router (Next.js 13+)**:
+
+- Use `'use client'` directive for components that use LoopKit hooks
+- Place LoopKitProvider in `layout.tsx`
+
+**Pages Router**:
+
+- Place LoopKitProvider in `_app.tsx`
+- No client directive needed
+
+### 5. Dynamic Imports (Alternative Approach)
+
+If you still encounter issues, you can use dynamic imports:
+
+```jsx
+import dynamic from 'next/dynamic';
+
+const AnalyticsProvider = dynamic(
+  () =>
+    import('@loopkit/react').then((mod) => ({ default: mod.LoopKitProvider })),
+  { ssr: false }
+);
+
+export default function App({ Component, pageProps }) {
+  return (
+    <AnalyticsProvider apiKey="your-api-key">
+      <Component {...pageProps} />
+    </AnalyticsProvider>
+  );
+}
+```
+
+### 6. Vercel Deployment Issues
+
+If you encounter build issues on Vercel:
+
+1. Ensure your `package.json` includes the correct dependencies
+2. Check that your Node.js version is compatible (16+ recommended)
+3. Consider adding to your `next.config.js`:
+
+```js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  transpilePackages: ['@loopkit/react', '@loopkit/javascript'],
+  experimental: {
+    esmExternals: true,
+  },
+};
+
+module.exports = nextConfig;
+```
+
+### Getting Help
+
+If you continue to experience issues:
+
+1. Check that you're using the latest version: `npm update @loopkit/react`
+2. Review the [Next.js documentation](https://nextjs.org/docs) for SSR best practices
+3. Open an issue on the GitHub repository with:
+   - Your Next.js version
+   - Your @loopkit/react version
+   - Full error message and stack trace
+   - Minimal reproduction code
+
+## Configuration

@@ -72,4 +72,6 @@ export {
 } from './types';
 
 // Re-export the underlying LoopKit SDK for advanced use cases
-export { default as LoopKit } from '@loopkit/javascript';
+// Use namespace import to handle potential export issues
+import * as LoopKitJavaScript from '@loopkit/javascript';
+export { LoopKitJavaScript as LoopKit };

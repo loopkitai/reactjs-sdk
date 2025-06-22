@@ -8,6 +8,9 @@ import type {
   GroupProperties,
 } from './types';
 
+// Utility function to check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
 /**
  * Main hook for using LoopKit analytics
  *
@@ -50,6 +53,11 @@ export const useLoopKit = (
       pageName?: string,
       properties: Record<string, any> = {}
     ): Promise<void> => {
+      if (!isBrowser) {
+        // Skip tracking during SSR
+        return;
+      }
+
       const pageViewProperties = {
         page: pageName || window.location.pathname,
         url: window.location.href,
@@ -258,15 +266,23 @@ export const usePerformanceTracking = (
   const mountTime = useRef<number>(0);
 
   // Track render start time
-  if (trackRenderTime && enabled && isInitialized) {
+  if (
+    trackRenderTime &&
+    enabled &&
+    isInitialized &&
+    isBrowser &&
+    typeof performance !== 'undefined'
+  ) {
     renderStartTime.current = performance.now();
   }
 
   // Track component mount
   useEffect(() => {
-    if (!enabled || !isInitialized) return;
+    if (!enabled || !isInitialized || !isBrowser) return;
 
-    mountTime.current = performance.now();
+    const now =
+      typeof performance !== 'undefined' ? performance.now() : Date.now();
+    mountTime.current = now;
 
     if (trackMounts) {
       track('component_mounted', {
@@ -287,8 +303,9 @@ export const usePerformanceTracking = (
 
     // Cleanup function for unmount tracking
     return () => {
-      if (trackUnmounts) {
-        const unmountTime = performance.now();
+      if (trackUnmounts && isBrowser) {
+        const unmountTime =
+          typeof performance !== 'undefined' ? performance.now() : Date.now();
         const componentLifetime = unmountTime - mountTime.current;
 
         track('component_unmounted', {
@@ -310,15 +327,17 @@ export const usePerformanceTracking = (
 
   // Track re-render time
   useEffect(() => {
-    if (!enabled || !isInitialized || !trackRenderTime) return;
+    if (!enabled || !isInitialized || !trackRenderTime || !isBrowser) return;
     if (mountTime.current === 0) return; // Skip first render (mount)
 
-    const renderTime = performance.now() - renderStartTime.current;
-    track('component_render_time', {
-      component_name: componentName,
-      render_time_ms: renderTime,
-      render_type: 'update',
-    }).catch(console.error);
+    if (typeof performance !== 'undefined' && renderStartTime.current > 0) {
+      const renderTime = performance.now() - renderStartTime.current;
+      track('component_render_time', {
+        component_name: componentName,
+        render_time_ms: renderTime,
+        render_type: 'update',
+      }).catch(console.error);
+    }
   });
 };
 
@@ -340,7 +359,7 @@ export const useRouteTracking = (
   const previousRoute = useRef<string>('');
 
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized || !isBrowser) return;
 
     const currentRoute = routeName || window.location.pathname;
 

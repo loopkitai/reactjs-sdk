@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
-import LoopKit from '@loopkit/javascript';
+import * as LoopKitJavaScript from '@loopkit/javascript';
 import type {
   LoopKitContextValue,
   LoopKitProviderProps,
@@ -20,6 +20,12 @@ import type {
   BatchEventInput,
 } from '@loopkit/javascript';
 import { LoopKitInitializationError, LoopKitTrackingError } from './types';
+
+// Utility function to check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
+// Handle different export patterns from @loopkit/javascript
+const LoopKit = (LoopKitJavaScript as any).default || LoopKitJavaScript;
 
 // Create the context with undefined default value
 const LoopKitContext = createContext<LoopKitContextValue | undefined>(
@@ -64,6 +70,12 @@ export const LoopKitProvider: React.FC<LoopKitProviderProps> = ({
 
   // Initialize LoopKit
   useEffect(() => {
+    if (!isBrowser) {
+      // Skip initialization during SSR
+      setIsLoading(false);
+      return;
+    }
+
     const initializeLoopKit = async () => {
       try {
         setIsLoading(true);

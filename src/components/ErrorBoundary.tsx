@@ -1,5 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import LoopKit from '@loopkit/javascript';
+import * as LoopKitJavaScript from '@loopkit/javascript';
+
+// Handle different export patterns from @loopkit/javascript
+const LoopKit = (LoopKitJavaScript as any).default || LoopKitJavaScript;
 
 interface Props {
   children: ReactNode;

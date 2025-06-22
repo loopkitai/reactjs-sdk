@@ -13,6 +13,7 @@ module.exports = [
         file: packageJson.main,
         format: 'cjs',
         sourcemap: true,
+        exports: 'named',
       },
       {
         file: packageJson.module,
@@ -21,7 +22,9 @@ module.exports = [
       },
     ],
     plugins: [
-      resolve(),
+      resolve({
+        browser: false,
+      }),
       commonjs(),
       typescript({
         tsconfig: './tsconfig.json',
@@ -29,7 +32,13 @@ module.exports = [
         declarationDir: './dist/types',
       }),
     ],
-    external: ['react', 'react-dom', '@loopkit/javascript'],
+    external: [
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      '@loopkit/javascript',
+    ],
   },
   {
     input: 'dist/types/index.d.ts',
